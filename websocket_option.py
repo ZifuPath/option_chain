@@ -14,7 +14,7 @@ load_dotenv()
 
 class OptionChain:
 
-    def __init__(self, expiry: str):
+    def __init__(self, expiry: str, symbol: str):
         self.expiry = expiry
         self.email = os.getenv('email')
         self.password = os.getenv('passwd')
@@ -22,10 +22,11 @@ class OptionChain:
         self.cred = ast.literal_eval(os.getenv('cred'))
         self.symbol = symbol
         base = os.getcwd()
-        if not os.path.exists(os.path.join(os.path.join(base, 'dataset'), self.expiry)):
-            os.mkdir(f'/dataset/{self.expiry}')
-            os.mkdir(f'/dataset/{self.expiry}/OI')
-            os.mkdir(f'/dataset/{self.expiry}/LTP')
+        base = os.path.join(base, 'dataset')
+        if not os.path.exists(os.path.join(base, self.expiry)):
+            os.mkdir(f'dataset/{self.expiry}')
+            os.mkdir(f'dataset/{self.expiry}/OI')
+            os.mkdir(f'dataset/{self.expiry}/LTP')
 
     def __str__(self):
         return f'{self.__dict__}'
@@ -55,7 +56,7 @@ class OptionChain:
         adict = df1.to_dict('records')
         return adict
 
-    def get_dataframe(self,symbol,exch):
+    def get_dataframe(self, symbol, exch):
         df = pd.read_csv('dataset/scripmaster-csv-format.csv')
         if self.symbol == symbol:
             df = df[(df.Exch == exch) & (df.ExchType == 'D') & (df.Expiry == f'{self.expiry} 14:30:00')]
@@ -170,7 +171,7 @@ def app():
     symbol = 'BANKNIFTY'
     exch = 'N'
     expiry = get_expiry_date(symbol)
-    oc_scrapper = OptionChain(expiry=expiry)
+    oc_scrapper = OptionChain(expiry=expiry, symbol= symbol)
     run_websockets(symbol, exch, expiry, oc_scrapper)
 
 
