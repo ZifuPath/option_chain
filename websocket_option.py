@@ -27,7 +27,7 @@ class OptionChain:
             os.mkdir(f'dataset/{self.expiry}')
             os.mkdir(f'dataset/{self.expiry}/OI')
             os.mkdir(f'dataset/{self.expiry}/LTP')
-
+            os.mkdir(f'dataset/{self.expiry}/OC')
     def __str__(self):
         return f'{self.__dict__}'
 
@@ -94,7 +94,6 @@ def get_websocket(wsPayload, oc_scrapper: OptionChain, df: pd.DataFrame, client,
             df.loc[df['Scripcode'] == st['Token'], 'OI'] = oi
             df.loc[df['Scripcode'] == st['Token'], 'ltp'] = ltp
             alist.append(st['Token'])
-            print(len(alist),len(df))
             if len(alist) >= len(df):
                 print('run completed')
                 strike_list = list(df['Name'].unique())
@@ -139,7 +138,7 @@ def run_websockets(symbol, exch, expiry , oc_scrapper):
     COL = ['Exch', 'ExchType', 'Scripcode', 'Name', 'Series', 'Expiry', 'CpType', 'Strikerate', 'WireCat', 'ISIN',
            'Fullname', 'LotSize', 'AllowedToTrade', 'QtyLimit', 'Multiplier', 'Underlyer', 'Root', 'TickSize', 'Symbol',
            'StrikePrice', 'OptionType', 'OI', 'LTP', 'datetime']
-    COL1 = [ 'datetime','Symbol','StrikePrice', 'OptionType', 'OI', 'LTP', ]
+    COL1 = ['datetime','Symbol','StrikePrice', 'OptionType', 'OI', 'LTP', ]
     for i in os.listdir(f'dataset/{expiry}/OI'):
         df = pd.read_csv(f'dataset/{expiry}/OI/{i}', names=COL)
         df1 = pd.read_csv(f'dataset/{expiry}/LTP/{i}', names=COL)
@@ -149,13 +148,14 @@ def run_websockets(symbol, exch, expiry , oc_scrapper):
     get_option_chain(expiry)
 
 
-def get_option_chain(expiry):
+def get_option_chain(expiry, symbol):
+    COL1 = ['datetime', 'Symbol', 'StrikePrice', 'OptionType', 'OI', 'LTP', ]
     alist = []
     for i in os.listdir(f'dataset/{expiry}/OC'):
-        if i.__contains__('CE'):
+        if i.__contains__('CE') and i.__contains__(symbol):
             b = i.replace('CE', 'PE')
-            df = pd.read_csv(f'dataset/{expiry}/OC/{i}')
-            df1 = pd.read_csv(f'dataset/{expiry}/OC/{b}')
+            df = pd.read_csv(f'dataset/{expiry}/OC/{i}', names=COL1)
+            df1 = pd.read_csv(f'dataset/{expiry}/OC/{b}', names=COL1)
             alist.append([df['datetime'].iloc[-1],
                           df['OI'].iloc[-1],
                           df['LTP'].iloc[-1],
@@ -171,9 +171,12 @@ def app():
     symbol = 'BANKNIFTY'
     exch = 'N'
     expiry = get_expiry_date(symbol)
+    get_option_chain(expiry ,symbol)
     oc_scrapper = OptionChain(expiry=expiry, symbol= symbol)
     run_websockets(symbol, exch, expiry, oc_scrapper)
 
 
 if __name__ == '__main__':
-    app()
+    df = pd.read_csv('oc/option_chain_2022-12-08 17-39.csv')
+    PCR =(df.OI_PE.sum()/df.OI_CE.sum())
+    print(PCR)
